@@ -10,7 +10,7 @@ import java.util.UUID;
  * A NetOutput implementation using an OutputStream as a backend.
  */
 public class StreamNetOutput implements NetOutput {
-    private OutputStream out;
+    protected OutputStream out;
 
     /**
      * Creates a new StreamNetOutput instance.
@@ -163,5 +163,13 @@ public class StreamNetOutput implements NetOutput {
     @Override
     public void flush() throws IOException {
         this.out.flush();
+    }
+    
+    public void close() {
+        try {
+            this.out.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
