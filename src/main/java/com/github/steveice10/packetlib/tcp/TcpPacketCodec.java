@@ -38,10 +38,22 @@ public class TcpPacketCodec extends ByteToMessageCodec<Packet> {
         }
 
         Packet packet = this.session.getPacketProtocol().createIncomingPacket(id);
-        packet.read(in);
+        try{
+            packet.read(in);
+        } catch (IllegalArgumentException e){
+            if (e.getStackTrace() == null || e.getStackTrace().length <= 0 || !e.getStackTrace()[0].getClassName().endsWith(".MagicValues")) {
+                throw e;
+            }
+            System.out.println("Caught IllegalArgumentException " + e.getMessage());
+        }
 
-        if(buf.readableBytes() > 0) {
-            throw new IllegalStateException("Packet \"" + packet.getClass().getSimpleName() + "\" not fully read.");
+        if (buf.readableBytes() > 0) {
+            try {
+                throw new IllegalStateException("Packet \"" + packet.getClass() + "\" not fully read. " + buf.readableBytes());
+            } catch (IllegalStateException e) {
+                e.printStackTrace();
+            }
+            in.skipReadableBytes();
         }
 
         if(packet.isPriority()) {
