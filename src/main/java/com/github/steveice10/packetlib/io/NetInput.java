@@ -7,6 +7,9 @@ import java.util.UUID;
  * An interface for reading network data.
  */
 public interface NetInput {
+
+    public byte[] readPrefixedBytes() throws IOException;
+
     /**
      * Reads the next boolean.
      *
@@ -242,4 +245,6 @@ public interface NetInput {
      * @throws java.io.IOException If an I/O error occurs.
      */
     public int available() throws IOException;
+
+    void skipReadableBytes();
 }

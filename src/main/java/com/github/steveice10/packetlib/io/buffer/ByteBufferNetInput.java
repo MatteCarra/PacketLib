@@ -258,4 +258,16 @@ public class ByteBufferNetInput implements NetInput {
     public int available() throws IOException {
         return this.buffer.remaining();
     }
+
+    //ADDED
+    @Override
+    public byte[] readPrefixedBytes() throws IOException {
+        short length = this.readShort();
+        return this.readBytes(length);
+    }
+
+    @Override
+    public void skipReadableBytes() {
+
+    }
 }

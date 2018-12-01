@@ -7,6 +7,9 @@ import java.util.UUID;
  * An interface for writing network data.
  */
 public interface NetOutput {
+
+    public void writePrefixedBytes(byte b[]) throws IOException;
+
     /**
      * Writes a boolean.
      *

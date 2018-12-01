@@ -18,6 +18,13 @@ public class Client {
         this.session = factory.createClientSession(this);
     }
 
+    public Client(String host, int port, PacketProtocol protocol, Session factory) {
+        this.host = host;
+        this.port = port;
+        this.protocol = protocol;
+        this.session = factory;
+    }
+
     /**
      * Gets the host the client is connecting to.
      *

@@ -261,6 +261,22 @@ public class StreamNetInput implements NetInput {
     public int available() throws IOException {
         return this.in.available();
     }
+
+    //ADDED
+    @Override
+    public byte[] readPrefixedBytes() throws IOException {
+        short length = this.readShort();
+        return this.readBytes(length);
+    }
+
+    @Override
+    public void skipReadableBytes() {
+        try {
+            readBytes(in.available());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
     
     public void close() {
         try {
@@ -268,5 +284,9 @@ public class StreamNetInput implements NetInput {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public InputStream getInputStream() {
+        return in;
     }
 }

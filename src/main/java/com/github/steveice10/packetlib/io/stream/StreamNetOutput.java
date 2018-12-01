@@ -164,6 +164,17 @@ public class StreamNetOutput implements NetOutput {
     public void flush() throws IOException {
         this.out.flush();
     }
+
+    //ADDED
+    @Override
+    public void writePrefixedBytes(byte[] b) throws IOException {
+        this.writeShort(b.length);
+        this.writeBytes(b);
+    }
+
+    public OutputStream getOutputStream() {
+        return out;
+    }
     
     public void close() {
         try {

@@ -1,5 +1,6 @@
 package com.github.steveice10.packetlib.packet;
 
+import com.github.steveice10.mc.common.SilentException;
 import com.github.steveice10.packetlib.Client;
 import com.github.steveice10.packetlib.Server;
 import com.github.steveice10.packetlib.Session;
@@ -16,7 +17,7 @@ import java.util.Map;
 public abstract class PacketProtocol {
     private final Map<Integer, Class<? extends Packet>> incoming = new HashMap<Integer, Class<? extends Packet>>();
     private final Map<Class<? extends Packet>, Integer> outgoing = new HashMap<Class<? extends Packet>, Integer>();
-
+    protected boolean SKIP_NON_REGISTERED_PACKETS = false;
     /**
      * Gets the prefix used when locating SRV records for this protocol.
      *
@@ -137,10 +138,14 @@ public abstract class PacketProtocol {
      * @throws IllegalArgumentException If the packet is not registered.
      */
     public final int getOutgoingId(Class<? extends Packet> packet) {
-        if(!this.outgoing.containsKey(packet) || this.outgoing.get(packet) == null) {
+        Integer res;
+        if (!this.outgoing.containsKey(packet) || (res = this.outgoing.get(packet)) == null) {
+            if (SKIP_NON_REGISTERED_PACKETS) {
+                throw new SilentException("Packet " + packet.getSimpleName() + " does not exists!");
+            }
             throw new IllegalArgumentException("Unregistered outgoing packet class: " + packet.getName());
         }
 
-        return this.outgoing.get(packet);
+        return res;
     }
 }

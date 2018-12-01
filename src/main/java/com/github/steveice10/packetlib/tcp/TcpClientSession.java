@@ -2,21 +2,21 @@ package com.github.steveice10.packetlib.tcp;
 
 import com.github.steveice10.packetlib.Client;
 import com.github.steveice10.packetlib.packet.PacketProtocol;
+
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.oio.OioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.concurrent.Future;
 
-import javax.naming.directory.InitialDirContext;
+import org.xbill.DNS.Lookup;
+import org.xbill.DNS.Record;
+import org.xbill.DNS.SRVRecord;
+import org.xbill.DNS.Type;
+
 import java.net.Proxy;
-import java.util.Hashtable;
+
 
 public class TcpClientSession extends TcpSession {
     private Client client;
@@ -76,14 +76,25 @@ public class TcpClientSession extends TcpSession {
                         int port = getPort();
 
                         try {
-                            Hashtable<String, String> environment = new Hashtable<String, String>();
-                            environment.put("java.naming.factory.initial", "com.sun.jndi.dns.DnsContextFactory");
-                            environment.put("java.naming.provider.url", "dns:");
+                            //Hashtable<String, String> environment = new Hashtable<String, String>();
+                            //environment.put("java.naming.factory.initial", "com.sun.jndi.dns.DnsContextFactory");
+                            //environment.put("java.naming.provider.url", "dns:");
 
-                            String[] result = new InitialDirContext(environment).getAttributes(getPacketProtocol().getSRVRecordPrefix() + "._tcp." + host, new String[] {"SRV"}).get("srv").get().toString().split(" ", 4);
-                            host = result[3];
-                            port = Integer.parseInt(result[2]);
+                            //String[] result = new InitialDirContext(environment).getAttributes(getPacketProtocol().getSRVRecordPrefix() + "._tcp." + host, new String[] { "SRV" }).get("srv").get().toString().split(" ", 4);
+
+                            Lookup lookup = new Lookup(getPacketProtocol().getSRVRecordPrefix() + "._tcp." + host, Type.SRV);
+                            Record recs[] = lookup.run();
+                            if(recs != null){
+                                for(Record rec : recs){
+                                    if(rec instanceof SRVRecord) {
+                                        host = ((SRVRecord) rec).getTarget().toString().replaceFirst("\\.$", "");
+                                        port = ((SRVRecord) rec).getPort();
+                                        break;
+                                    }
+                                }
+                            }
                         } catch(Throwable t) {
+                            t.printStackTrace();
                         }
 
                         bootstrap.remoteAddress(host, port);

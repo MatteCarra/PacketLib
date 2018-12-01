@@ -254,4 +254,16 @@ public class ByteBufNetInput implements NetInput {
     public int available() throws IOException {
         return this.buf.readableBytes();
     }
+
+    //ADDED
+    @Override
+    public byte[] readPrefixedBytes() throws IOException {
+        short length = this.readShort();
+        return this.readBytes(length);
+    }
+
+    @Override
+    public void skipReadableBytes() {
+        buf.readerIndex(buf.readerIndex() + buf.readableBytes());
+    }
 }

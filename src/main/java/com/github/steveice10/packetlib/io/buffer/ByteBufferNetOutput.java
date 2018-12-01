@@ -150,4 +150,11 @@ public class ByteBufferNetOutput implements NetOutput {
     @Override
     public void flush() throws IOException {
     }
+
+    //ADDED
+    @Override
+    public void writePrefixedBytes(byte[] b) throws IOException {
+        this.writeShort(b.length);
+        this.writeBytes(b);
+    }
 }
