@@ -11,7 +11,7 @@ import java.util.UUID;
  * A NetInput implementation using an InputStream as a backend.
  */
 public class StreamNetInput implements NetInput {
-    private InputStream in;
+    protected InputStream in;
 
     /**
      * Creates a new StreamNetInput instance.
@@ -260,5 +260,13 @@ public class StreamNetInput implements NetInput {
     @Override
     public int available() throws IOException {
         return this.in.available();
+    }
+    
+    public void close() {
+        try {
+            in.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
