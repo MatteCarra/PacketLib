@@ -1,10 +1,11 @@
 package com.github.steveice10.packetlib.tcp.io;
 
 import com.github.steveice10.packetlib.io.NetInput;
-import io.netty.buffer.ByteBuf;
 
 import java.io.IOException;
 import java.util.UUID;
+
+import io.netty.buffer.ByteBuf;
 
 /**
  * A NetInput implementation using a ByteBuf as a backend.
@@ -56,9 +57,9 @@ public class ByteBufNetInput implements NetInput {
         int value = 0;
         int size = 0;
         int b;
-        while(((b = this.readByte()) & 0x80) == 0x80) {
+        while (((b = this.readByte()) & 0x80) == 0x80) {
             value |= (b & 0x7F) << (size++ * 7);
-            if(size > 5) {
+            if (size > 5) {
                 throw new IOException("VarInt too long (length must be <= 5)");
             }
         }
@@ -76,9 +77,9 @@ public class ByteBufNetInput implements NetInput {
         int value = 0;
         int size = 0;
         int b;
-        while(((b = this.readByte()) & 0x80) == 0x80) {
+        while (((b = this.readByte()) & 0x80) == 0x80) {
             value |= (b & 0x7F) << (size++ * 7);
-            if(size > 10) {
+            if (size > 10) {
                 throw new IOException("VarLong too long (length must be <= 10)");
             }
         }
@@ -98,7 +99,7 @@ public class ByteBufNetInput implements NetInput {
 
     @Override
     public byte[] readBytes(int length) throws IOException {
-        if(length < 0) {
+        if (length < 0) {
             throw new IllegalArgumentException("Array cannot have length less than 0.");
         }
 
@@ -115,11 +116,11 @@ public class ByteBufNetInput implements NetInput {
     @Override
     public int readBytes(byte[] b, int offset, int length) throws IOException {
         int readable = this.buf.readableBytes();
-        if(readable <= 0) {
+        if (readable <= 0) {
             return -1;
         }
 
-        if(readable < length) {
+        if (readable < length) {
             length = readable;
         }
 
@@ -129,12 +130,12 @@ public class ByteBufNetInput implements NetInput {
 
     @Override
     public short[] readShorts(int length) throws IOException {
-        if(length < 0) {
+        if (length < 0) {
             throw new IllegalArgumentException("Array cannot have length less than 0.");
         }
 
         short s[] = new short[length];
-        for(int index = 0; index < length; index++) {
+        for (int index = 0; index < length; index++) {
             s[index] = this.readShort();
         }
 
@@ -149,15 +150,15 @@ public class ByteBufNetInput implements NetInput {
     @Override
     public int readShorts(short[] s, int offset, int length) throws IOException {
         int readable = this.buf.readableBytes();
-        if(readable <= 0) {
+        if (readable <= 0) {
             return -1;
         }
 
-        if(readable < length * 2) {
+        if (readable < length * 2) {
             length = readable / 2;
         }
 
-        for(int index = offset; index < offset + length; index++) {
+        for (int index = offset; index < offset + length; index++) {
             s[index] = this.readShort();
         }
 
@@ -166,12 +167,12 @@ public class ByteBufNetInput implements NetInput {
 
     @Override
     public int[] readInts(int length) throws IOException {
-        if(length < 0) {
+        if (length < 0) {
             throw new IllegalArgumentException("Array cannot have length less than 0.");
         }
 
         int i[] = new int[length];
-        for(int index = 0; index < length; index++) {
+        for (int index = 0; index < length; index++) {
             i[index] = this.readInt();
         }
 
@@ -186,15 +187,15 @@ public class ByteBufNetInput implements NetInput {
     @Override
     public int readInts(int[] i, int offset, int length) throws IOException {
         int readable = this.buf.readableBytes();
-        if(readable <= 0) {
+        if (readable <= 0) {
             return -1;
         }
 
-        if(readable < length * 4) {
+        if (readable < length * 4) {
             length = readable / 4;
         }
 
-        for(int index = offset; index < offset + length; index++) {
+        for (int index = offset; index < offset + length; index++) {
             i[index] = this.readInt();
         }
 
@@ -203,12 +204,12 @@ public class ByteBufNetInput implements NetInput {
 
     @Override
     public long[] readLongs(int length) throws IOException {
-        if(length < 0) {
+        if (length < 0) {
             throw new IllegalArgumentException("Array cannot have length less than 0.");
         }
 
         long l[] = new long[length];
-        for(int index = 0; index < length; index++) {
+        for (int index = 0; index < length; index++) {
             l[index] = this.readLong();
         }
 
@@ -223,15 +224,15 @@ public class ByteBufNetInput implements NetInput {
     @Override
     public int readLongs(long[] l, int offset, int length) throws IOException {
         int readable = this.buf.readableBytes();
-        if(readable <= 0) {
+        if (readable <= 0) {
             return -1;
         }
 
-        if(readable < length * 2) {
+        if (readable < length * 2) {
             length = readable / 2;
         }
 
-        for(int index = offset; index < offset + length; index++) {
+        for (int index = offset; index < offset + length; index++) {
             l[index] = this.readLong();
         }
 

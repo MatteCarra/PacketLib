@@ -3,19 +3,25 @@ package com.github.steveice10.packetlib.tcp;
 import com.github.steveice10.packetlib.Client;
 import com.github.steveice10.packetlib.packet.PacketProtocol;
 
+import org.minidns.hla.ResolverApi;
+import org.minidns.hla.SrvResolverResult;
+import org.minidns.record.SRV;
+
+import java.net.Proxy;
+import java.util.List;
+import java.util.Set;
+
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.oio.OioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.concurrent.Future;
-
-import org.xbill.DNS.Lookup;
-import org.xbill.DNS.Record;
-import org.xbill.DNS.SRVRecord;
-import org.xbill.DNS.Type;
-
-import java.net.Proxy;
 
 
 public class TcpClientSession extends TcpSession {
@@ -32,15 +38,15 @@ public class TcpClientSession extends TcpSession {
 
     @Override
     public void connect(boolean wait) {
-        if(this.disconnected) {
+        if (this.disconnected) {
             throw new IllegalStateException("Session has already been disconnected.");
-        } else if(this.group != null) {
+        } else if (this.group != null) {
             return;
         }
 
         try {
             final Bootstrap bootstrap = new Bootstrap();
-            if(this.proxy != null) {
+            if (this.proxy != null) {
                 this.group = new OioEventLoopGroup();
                 bootstrap.channelFactory(new ProxyOioChannelFactory(this.proxy));
             } else {
@@ -76,50 +82,44 @@ public class TcpClientSession extends TcpSession {
                         int port = getPort();
 
                         try {
-                            //Hashtable<String, String> environment = new Hashtable<String, String>();
-                            //environment.put("java.naming.factory.initial", "com.sun.jndi.dns.DnsContextFactory");
-                            //environment.put("java.naming.provider.url", "dns:");
-
-                            //String[] result = new InitialDirContext(environment).getAttributes(getPacketProtocol().getSRVRecordPrefix() + "._tcp." + host, new String[] { "SRV" }).get("srv").get().toString().split(" ", 4);
-
-                            Lookup lookup = new Lookup(getPacketProtocol().getSRVRecordPrefix() + "._tcp." + host, Type.SRV);
-                            Record recs[] = lookup.run();
-                            if(recs != null){
-                                for(Record rec : recs){
-                                    if(rec instanceof SRVRecord) {
-                                        host = ((SRVRecord) rec).getTarget().toString().replaceFirst("\\.$", "");
-                                        port = ((SRVRecord) rec).getPort();
-                                        break;
+                            SrvResolverResult result = ResolverApi.INSTANCE.resolveSrv(getPacketProtocol().getSRVRecordPrefix() + "._tcp." + host);
+                            if (result.wasSuccessful()) {
+                                Set<SRV> srvs = result.getAnswers();
+                                if(srvs.size() > 0) {
+                                    SRV srvRecord = srvs.iterator().next();
+                                    if(srvRecord != null) {
+                                        host = srvRecord.target.ace.replaceFirst("\\.$", "");
+                                        port = srvRecord.port;
                                     }
                                 }
                             }
-                        } catch(Throwable t) {
+                        } catch (Throwable t) {
                             t.printStackTrace();
                         }
 
                         bootstrap.remoteAddress(host, port);
 
                         ChannelFuture future = bootstrap.connect().sync();
-                        if(future.isSuccess()) {
-                            while(!isConnected() && !disconnected) {
+                        if (future.isSuccess()) {
+                            while (!isConnected() && !disconnected) {
                                 try {
                                     Thread.sleep(5);
-                                } catch(InterruptedException e) {
+                                } catch (InterruptedException e) {
                                 }
                             }
                         }
-                    } catch(Throwable t) {
+                    } catch (Throwable t) {
                         exceptionCaught(null, t);
                     }
                 }
             };
 
-            if(wait) {
+            if (wait) {
                 connectTask.run();
             } else {
                 new Thread(connectTask).start();
             }
-        } catch(Throwable t) {
+        } catch (Throwable t) {
             exceptionCaught(null, t);
         }
     }
@@ -127,12 +127,12 @@ public class TcpClientSession extends TcpSession {
     @Override
     public void disconnect(String reason, Throwable cause, boolean wait) {
         super.disconnect(reason, cause, wait);
-        if(this.group != null) {
+        if (this.group != null) {
             Future<?> future = this.group.shutdownGracefully();
-            if(wait) {
+            if (wait) {
                 try {
                     future.await();
-                } catch(InterruptedException e) {
+                } catch (InterruptedException e) {
                 }
             }
 

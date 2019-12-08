@@ -1,10 +1,10 @@
 package com.github.steveice10.packetlib.tcp;
 
-import io.netty.channel.ChannelFactory;
-import io.netty.channel.socket.oio.OioSocketChannel;
-
 import java.net.Proxy;
 import java.net.Socket;
+
+import io.netty.channel.ChannelFactory;
+import io.netty.channel.socket.oio.OioSocketChannel;
 
 public class ProxyOioChannelFactory implements ChannelFactory<OioSocketChannel> {
     private Proxy proxy;

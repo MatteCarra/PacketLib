@@ -2,9 +2,10 @@ package com.github.steveice10.packetlib.tcp;
 
 import com.github.steveice10.packetlib.Server;
 import com.github.steveice10.packetlib.packet.PacketProtocol;
-import io.netty.channel.ChannelHandlerContext;
 
 import java.util.Map;
+
+import io.netty.channel.ChannelHandlerContext;
 
 public class TcpServerSession extends TcpSession {
     private Server server;

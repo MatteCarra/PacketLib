@@ -3,13 +3,14 @@ package com.github.steveice10.packetlib.tcp;
 import com.github.steveice10.packetlib.Session;
 import com.github.steveice10.packetlib.tcp.io.ByteBufNetInput;
 import com.github.steveice10.packetlib.tcp.io.ByteBufNetOutput;
+
+import java.util.List;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageCodec;
 import io.netty.handler.codec.CorruptedFrameException;
-
-import java.util.List;
 
 public class TcpPacketSizer extends ByteToMessageCodec<ByteBuf> {
     private Session session;
@@ -29,19 +30,19 @@ public class TcpPacketSizer extends ByteToMessageCodec<ByteBuf> {
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf buf, List<Object> out) throws Exception {
         int size = this.session.getPacketProtocol().getPacketHeader().getLengthSize();
-        if(size > 0) {
+        if (size > 0) {
             buf.markReaderIndex();
             byte[] lengthBytes = new byte[size];
-            for(int index = 0; index < lengthBytes.length; index++) {
-                if(!buf.isReadable()) {
+            for (int index = 0; index < lengthBytes.length; index++) {
+                if (!buf.isReadable()) {
                     buf.resetReaderIndex();
                     return;
                 }
 
                 lengthBytes[index] = buf.readByte();
-                if((this.session.getPacketProtocol().getPacketHeader().isLengthVariable() && lengthBytes[index] >= 0) || index == size - 1) {
+                if ((this.session.getPacketProtocol().getPacketHeader().isLengthVariable() && lengthBytes[index] >= 0) || index == size - 1) {
                     int length = this.session.getPacketProtocol().getPacketHeader().readLength(new ByteBufNetInput(Unpooled.wrappedBuffer(lengthBytes)), buf.readableBytes());
-                    if(buf.readableBytes() < length) {
+                    if (buf.readableBytes() < length) {
                         buf.resetReaderIndex();
                         return;
                     }

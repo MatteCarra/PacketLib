@@ -35,7 +35,7 @@ public class StreamNetInput implements NetInput {
     @Override
     public int readUnsignedByte() throws IOException {
         int b = this.in.read();
-        if(b < 0) {
+        if (b < 0) {
             throw new EOFException();
         }
 
@@ -75,9 +75,9 @@ public class StreamNetInput implements NetInput {
         int value = 0;
         int size = 0;
         int b;
-        while(((b = this.readByte()) & 0x80) == 0x80) {
+        while (((b = this.readByte()) & 0x80) == 0x80) {
             value |= (b & 0x7F) << (size++ * 7);
-            if(size > 5) {
+            if (size > 5) {
                 throw new IOException("VarInt too long (length must be <= 5)");
             }
         }
@@ -96,9 +96,9 @@ public class StreamNetInput implements NetInput {
         long value = 0;
         int size = 0;
         int b;
-        while(((b = this.readByte()) & 0x80) == 0x80) {
+        while (((b = this.readByte()) & 0x80) == 0x80) {
             value |= (long) (b & 0x7F) << (size++ * 7);
-            if(size > 10) {
+            if (size > 10) {
                 throw new IOException("VarLong too long (length must be <= 10)");
             }
         }
@@ -118,15 +118,15 @@ public class StreamNetInput implements NetInput {
 
     @Override
     public byte[] readBytes(int length) throws IOException {
-        if(length < 0) {
+        if (length < 0) {
             throw new IllegalArgumentException("Array cannot have length less than 0.");
         }
 
         byte b[] = new byte[length];
         int n = 0;
-        while(n < length) {
+        while (n < length) {
             int count = this.in.read(b, n, length - n);
-            if(count < 0) {
+            if (count < 0) {
                 throw new EOFException();
             }
 
@@ -148,13 +148,13 @@ public class StreamNetInput implements NetInput {
 
     @Override
     public short[] readShorts(int length) throws IOException {
-        if(length < 0) {
+        if (length < 0) {
             throw new IllegalArgumentException("Array cannot have length less than 0.");
         }
 
         short s[] = new short[length];
         int read = this.readShorts(s);
-        if(read < length) {
+        if (read < length) {
             throw new EOFException();
         }
 
@@ -168,10 +168,10 @@ public class StreamNetInput implements NetInput {
 
     @Override
     public int readShorts(short[] s, int offset, int length) throws IOException {
-        for(int index = offset; index < offset + length; index++) {
+        for (int index = offset; index < offset + length; index++) {
             try {
                 s[index] = this.readShort();
-            } catch(EOFException e) {
+            } catch (EOFException e) {
                 return index - offset;
             }
         }
@@ -181,13 +181,13 @@ public class StreamNetInput implements NetInput {
 
     @Override
     public int[] readInts(int length) throws IOException {
-        if(length < 0) {
+        if (length < 0) {
             throw new IllegalArgumentException("Array cannot have length less than 0.");
         }
 
         int i[] = new int[length];
         int read = this.readInts(i);
-        if(read < length) {
+        if (read < length) {
             throw new EOFException();
         }
 
@@ -201,10 +201,10 @@ public class StreamNetInput implements NetInput {
 
     @Override
     public int readInts(int[] i, int offset, int length) throws IOException {
-        for(int index = offset; index < offset + length; index++) {
+        for (int index = offset; index < offset + length; index++) {
             try {
                 i[index] = this.readInt();
-            } catch(EOFException e) {
+            } catch (EOFException e) {
                 return index - offset;
             }
         }
@@ -214,13 +214,13 @@ public class StreamNetInput implements NetInput {
 
     @Override
     public long[] readLongs(int length) throws IOException {
-        if(length < 0) {
+        if (length < 0) {
             throw new IllegalArgumentException("Array cannot have length less than 0.");
         }
 
         long l[] = new long[length];
         int read = this.readLongs(l);
-        if(read < length) {
+        if (read < length) {
             throw new EOFException();
         }
 
@@ -234,10 +234,10 @@ public class StreamNetInput implements NetInput {
 
     @Override
     public int readLongs(long[] l, int offset, int length) throws IOException {
-        for(int index = offset; index < offset + length; index++) {
+        for (int index = offset; index < offset + length; index++) {
             try {
                 l[index] = this.readLong();
-            } catch(EOFException e) {
+            } catch (EOFException e) {
                 return index - offset;
             }
         }
@@ -277,7 +277,7 @@ public class StreamNetInput implements NetInput {
             e.printStackTrace();
         }
     }
-    
+
     public void close() {
         try {
             in.close();

@@ -7,11 +7,13 @@ import com.github.steveice10.packetlib.io.NetOutput;
 import com.github.steveice10.packetlib.packet.Packet;
 import com.github.steveice10.packetlib.tcp.io.ByteBufNetInput;
 import com.github.steveice10.packetlib.tcp.io.ByteBufNetOutput;
+
+import java.io.IOException;
+import java.util.List;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageCodec;
-
-import java.util.List;
 
 public class TcpPacketCodec extends ByteToMessageCodec<Packet> {
     private Session session;
@@ -32,19 +34,25 @@ public class TcpPacketCodec extends ByteToMessageCodec<Packet> {
         int initial = buf.readerIndex();
         NetInput in = new ByteBufNetInput(buf);
         int id = this.session.getPacketProtocol().getPacketHeader().readPacketId(in);
-        if(id == -1) {
+        if (id == -1) {
             buf.readerIndex(initial);
             return;
         }
 
         Packet packet = this.session.getPacketProtocol().createIncomingPacket(id);
-        try{
+        try {
             packet.read(in);
-        } catch (IllegalArgumentException e){
+        } catch (IllegalArgumentException e) {
             if (e.getStackTrace() == null || e.getStackTrace().length <= 0 || !e.getStackTrace()[0].getClassName().endsWith(".MagicValues")) {
                 throw e;
             }
             System.out.println("Caught IllegalArgumentException " + e.getMessage());
+        } catch (IOException e) {
+            if(e.getMessage() != null && e.getMessage().equals("Failed to read chunk data.")) {
+                e.printStackTrace();
+            } else {
+                throw e;
+            }
         }
 
         if (buf.readableBytes() > 0) {
@@ -54,9 +62,10 @@ public class TcpPacketCodec extends ByteToMessageCodec<Packet> {
                 e.printStackTrace();
             }
             in.skipReadableBytes();
+            return;
         }
 
-        if(packet.isPriority()) {
+        if (packet.isPriority()) {
             this.session.callEvent(new PacketReceivedEvent(this.session, packet));
         }
 

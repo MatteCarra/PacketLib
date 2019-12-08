@@ -99,14 +99,14 @@ public class Server {
     public PacketProtocol createPacketProtocol() {
         try {
             Constructor<? extends PacketProtocol> constructor = this.protocol.getDeclaredConstructor();
-            if(!constructor.isAccessible()) {
+            if (!constructor.isAccessible()) {
                 constructor.setAccessible(true);
             }
 
             return constructor.newInstance();
-        } catch(NoSuchMethodError e) {
+        } catch (NoSuchMethodError e) {
             throw new IllegalStateException("PacketProtocol \"" + this.protocol.getName() + "\" does not have a no-params constructor for instantiation.");
-        } catch(Exception e) {
+        } catch (Exception e) {
             throw new IllegalStateException("Failed to instantiate PacketProtocol " + this.protocol.getName() + ".", e);
         }
     }
@@ -143,13 +143,13 @@ public class Server {
     @SuppressWarnings("unchecked")
     public <T> T getGlobalFlag(String key) {
         Object value = this.flags.get(key);
-        if(value == null) {
+        if (value == null) {
             return null;
         }
 
         try {
             return (T) value;
-        } catch(ClassCastException e) {
+        } catch (ClassCastException e) {
             throw new IllegalStateException("Tried to get flag \"" + key + "\" as the wrong type. Actual type: " + value.getClass().getName());
         }
     }
@@ -198,7 +198,7 @@ public class Server {
      * @param event Event to call.
      */
     public void callEvent(ServerEvent event) {
-        for(ServerListener listener : this.listeners) {
+        for (ServerListener listener : this.listeners) {
             event.call(listener);
         }
     }
@@ -229,7 +229,7 @@ public class Server {
      */
     public void removeSession(Session session) {
         this.sessions.remove(session);
-        if(session.isConnected()) {
+        if (session.isConnected()) {
             session.disconnect("Connection closed.");
         }
 
@@ -259,8 +259,8 @@ public class Server {
      */
     public void close(boolean wait) {
         this.callEvent(new ServerClosingEvent(this));
-        for(Session session : this.getSessions()) {
-            if(session.isConnected()) {
+        for (Session session : this.getSessions()) {
+            if (session.isConnected()) {
                 session.disconnect("Server closed.");
             }
         }

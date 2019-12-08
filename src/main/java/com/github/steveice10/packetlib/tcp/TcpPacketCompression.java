@@ -3,15 +3,16 @@ package com.github.steveice10.packetlib.tcp;
 import com.github.steveice10.packetlib.Session;
 import com.github.steveice10.packetlib.tcp.io.ByteBufNetInput;
 import com.github.steveice10.packetlib.tcp.io.ByteBufNetOutput;
+
+import java.util.List;
+import java.util.zip.Deflater;
+import java.util.zip.Inflater;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageCodec;
 import io.netty.handler.codec.DecoderException;
-
-import java.util.List;
-import java.util.zip.Deflater;
-import java.util.zip.Inflater;
 
 public class TcpPacketCompression extends ByteToMessageCodec<ByteBuf> {
     private static final int MAX_COMPRESSED_SIZE = 2097152;
@@ -29,7 +30,7 @@ public class TcpPacketCompression extends ByteToMessageCodec<ByteBuf> {
     public void encode(ChannelHandlerContext ctx, ByteBuf in, ByteBuf out) throws Exception {
         int readable = in.readableBytes();
         ByteBufNetOutput output = new ByteBufNetOutput(out);
-        if(readable < this.session.getCompressionThreshold()) {
+        if (readable < this.session.getCompressionThreshold()) {
             output.writeVarInt(0);
             out.writeBytes(in);
         } else {
@@ -38,7 +39,7 @@ public class TcpPacketCompression extends ByteToMessageCodec<ByteBuf> {
             output.writeVarInt(bytes.length);
             this.deflater.setInput(bytes, 0, readable);
             this.deflater.finish();
-            while(!this.deflater.finished()) {
+            while (!this.deflater.finished()) {
                 int length = this.deflater.deflate(this.buf);
                 output.writeBytes(this.buf, length);
             }
@@ -49,17 +50,17 @@ public class TcpPacketCompression extends ByteToMessageCodec<ByteBuf> {
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf buf, List<Object> out) throws Exception {
-        if(buf.readableBytes() != 0) {
+        if (buf.readableBytes() != 0) {
             ByteBufNetInput in = new ByteBufNetInput(buf);
             int size = in.readVarInt();
-            if(size == 0) {
+            if (size == 0) {
                 out.add(buf.readBytes(buf.readableBytes()));
             } else {
-                if(size < this.session.getCompressionThreshold()) {
+                if (size < this.session.getCompressionThreshold()) {
                     throw new DecoderException("Badly compressed packet: size of " + size + " is below threshold of " + this.session.getCompressionThreshold() + ".");
                 }
 
-                if(size > MAX_COMPRESSED_SIZE) {
+                if (size > MAX_COMPRESSED_SIZE) {
                     throw new DecoderException("Badly compressed packet: size of " + size + " is larger than protocol maximum of " + MAX_COMPRESSED_SIZE + ".");
                 }
 

@@ -1,9 +1,10 @@
 package com.github.steveice10.packetlib.crypt;
 
-import javax.crypto.Cipher;
-import javax.crypto.spec.IvParameterSpec;
 import java.security.GeneralSecurityException;
 import java.security.Key;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
 
 /**
  * An encryption implementation using "AES/CFB8/NoPadding" encryption.

@@ -1,11 +1,12 @@
 package com.github.steveice10.packetlib.tcp;
 
 import com.github.steveice10.packetlib.Session;
+
+import java.util.List;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageCodec;
-
-import java.util.List;
 
 public class TcpPacketEncryptor extends ByteToMessageCodec<ByteBuf> {
     private Session session;
@@ -18,11 +19,11 @@ public class TcpPacketEncryptor extends ByteToMessageCodec<ByteBuf> {
 
     @Override
     public void encode(ChannelHandlerContext ctx, ByteBuf in, ByteBuf out) throws Exception {
-        if(this.session.getPacketProtocol().getEncryption() != null) {
+        if (this.session.getPacketProtocol().getEncryption() != null) {
             int length = in.readableBytes();
             byte[] bytes = this.getBytes(in);
             int outLength = this.session.getPacketProtocol().getEncryption().getEncryptOutputSize(length);
-            if(this.encryptedArray.length < outLength) {
+            if (this.encryptedArray.length < outLength) {
                 this.encryptedArray = new byte[outLength];
             }
 
@@ -34,7 +35,7 @@ public class TcpPacketEncryptor extends ByteToMessageCodec<ByteBuf> {
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf buf, List<Object> out) throws Exception {
-        if(this.session.getPacketProtocol().getEncryption() != null) {
+        if (this.session.getPacketProtocol().getEncryption() != null) {
             int length = buf.readableBytes();
             byte[] bytes = this.getBytes(buf);
             ByteBuf result = ctx.alloc().heapBuffer(this.session.getPacketProtocol().getEncryption().getDecryptOutputSize(length));
@@ -47,7 +48,7 @@ public class TcpPacketEncryptor extends ByteToMessageCodec<ByteBuf> {
 
     private byte[] getBytes(ByteBuf buf) {
         int length = buf.readableBytes();
-        if(this.decryptedArray.length < length) {
+        if (this.decryptedArray.length < length) {
             this.decryptedArray = new byte[length];
         }
 

@@ -11,16 +11,6 @@ import com.github.steveice10.packetlib.event.session.SessionEvent;
 import com.github.steveice10.packetlib.event.session.SessionListener;
 import com.github.steveice10.packetlib.packet.Packet;
 import com.github.steveice10.packetlib.packet.PacketProtocol;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ConnectTimeoutException;
-import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.timeout.ReadTimeoutException;
-import io.netty.handler.timeout.ReadTimeoutHandler;
-import io.netty.handler.timeout.WriteTimeoutException;
-import io.netty.handler.timeout.WriteTimeoutHandler;
 
 import java.net.ConnectException;
 import java.net.SocketAddress;
@@ -31,6 +21,17 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
+
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ConnectTimeoutException;
+import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.timeout.ReadTimeoutException;
+import io.netty.handler.timeout.ReadTimeoutHandler;
+import io.netty.handler.timeout.WriteTimeoutException;
+import io.netty.handler.timeout.WriteTimeoutHandler;
 
 public abstract class TcpSession extends SimpleChannelInboundHandler<Packet> implements Session {
     private String host;
@@ -105,13 +106,13 @@ public abstract class TcpSession extends SimpleChannelInboundHandler<Packet> imp
     @Override
     public <T> T getFlag(String key) {
         Object value = this.getFlags().get(key);
-        if(value == null) {
+        if (value == null) {
             return null;
         }
 
         try {
             return (T) value;
-        } catch(ClassCastException e) {
+        } catch (ClassCastException e) {
             throw new IllegalStateException("Tried to get flag \"" + key + "\" as the wrong type. Actual type: " + value.getClass().getName());
         }
     }
@@ -139,10 +140,10 @@ public abstract class TcpSession extends SimpleChannelInboundHandler<Packet> imp
     @Override
     public void callEvent(SessionEvent event) {
         try {
-            for(SessionListener listener : this.listeners) {
+            for (SessionListener listener : this.listeners) {
                 event.call(listener);
             }
-        } catch(Throwable t) {
+        } catch (Throwable t) {
             exceptionCaught(null, t);
         }
     }
@@ -155,12 +156,12 @@ public abstract class TcpSession extends SimpleChannelInboundHandler<Packet> imp
     @Override
     public void setCompressionThreshold(int threshold) {
         this.compressionThreshold = threshold;
-        if(this.channel != null) {
-            if(this.compressionThreshold >= 0) {
-                if(this.channel.pipeline().get("compression") == null) {
+        if (this.channel != null) {
+            if (this.compressionThreshold >= 0) {
+                if (this.channel.pipeline().get("compression") == null) {
                     this.channel.pipeline().addBefore("codec", "compression", new TcpPacketCompression(this));
                 }
-            } else if(this.channel.pipeline().get("compression") != null) {
+            } else if (this.channel.pipeline().get("compression") != null) {
                 this.channel.pipeline().remove("compression");
             }
         }
@@ -205,20 +206,20 @@ public abstract class TcpSession extends SimpleChannelInboundHandler<Packet> imp
 
     @Override
     public void send(Packet packet) {
-        if(this.channel == null) {
+        if (this.channel == null) {
             return;
         }
 
         PacketSendingEvent sendingEvent = new PacketSendingEvent(this, packet);
         this.callEvent(sendingEvent);
 
-        if(!sendingEvent.isCancelled()) {
+        if (!sendingEvent.isCancelled()) {
             final Packet toSend = sendingEvent.getPacket();
 
             ChannelFuture future = this.channel.writeAndFlush(toSend).addListener(new ChannelFutureListener() {
                 @Override
                 public void operationComplete(ChannelFuture future) throws Exception {
-                    if(future.isSuccess()) {
+                    if (future.isSuccess()) {
                         callEvent(new PacketSentEvent(TcpSession.this, toSend));
                     } else {
                         exceptionCaught(null, future.cause());
@@ -226,10 +227,10 @@ public abstract class TcpSession extends SimpleChannelInboundHandler<Packet> imp
                 }
             });
 
-            if(toSend.isPriority()) {
+            if (toSend.isPriority()) {
                 try {
                     future.await();
-                } catch(InterruptedException e) {
+                } catch (InterruptedException e) {
                 }
             }
         }
@@ -252,18 +253,18 @@ public abstract class TcpSession extends SimpleChannelInboundHandler<Packet> imp
 
     @Override
     public void disconnect(final String reason, final Throwable cause, boolean wait) {
-        if(this.disconnected) {
+        if (this.disconnected) {
             return;
         }
 
         this.disconnected = true;
 
-        if(this.packetHandleThread != null) {
+        if (this.packetHandleThread != null) {
             this.packetHandleThread.interrupt();
             this.packetHandleThread = null;
         }
 
-        if(this.channel != null && this.channel.isOpen()) {
+        if (this.channel != null && this.channel.isOpen()) {
             this.callEvent(new DisconnectingEvent(this, reason, cause));
             ChannelFuture future = this.channel.flush().close().addListener(new ChannelFutureListener() {
                 @Override
@@ -272,10 +273,10 @@ public abstract class TcpSession extends SimpleChannelInboundHandler<Packet> imp
                 }
             });
 
-            if(wait) {
+            if (wait) {
                 try {
                     future.await();
-                } catch(InterruptedException e) {
+                } catch (InterruptedException e) {
                 }
             }
         } else {
@@ -290,13 +291,13 @@ public abstract class TcpSession extends SimpleChannelInboundHandler<Packet> imp
     }
 
     protected void refreshReadTimeoutHandler(Channel channel) {
-        if(channel != null) {
-            if(this.readTimeout <= 0) {
-                if(channel.pipeline().get("readTimeout") != null) {
+        if (channel != null) {
+            if (this.readTimeout <= 0) {
+                if (channel.pipeline().get("readTimeout") != null) {
                     channel.pipeline().remove("readTimeout");
                 }
             } else {
-                if(channel.pipeline().get("readTimeout") == null) {
+                if (channel.pipeline().get("readTimeout") == null) {
                     channel.pipeline().addFirst("readTimeout", new ReadTimeoutHandler(this.readTimeout));
                 } else {
                     channel.pipeline().replace("readTimeout", "readTimeout", new ReadTimeoutHandler(this.readTimeout));
@@ -310,13 +311,13 @@ public abstract class TcpSession extends SimpleChannelInboundHandler<Packet> imp
     }
 
     protected void refreshWriteTimeoutHandler(Channel channel) {
-        if(channel != null) {
-            if(this.writeTimeout <= 0) {
-                if(channel.pipeline().get("writeTimeout") != null) {
+        if (channel != null) {
+            if (this.writeTimeout <= 0) {
+                if (channel.pipeline().get("writeTimeout") != null) {
                     channel.pipeline().remove("writeTimeout");
                 }
             } else {
-                if(channel.pipeline().get("writeTimeout") == null) {
+                if (channel.pipeline().get("writeTimeout") == null) {
                     channel.pipeline().addFirst("writeTimeout", new WriteTimeoutHandler(this.writeTimeout));
                 } else {
                     channel.pipeline().replace("writeTimeout", "writeTimeout", new WriteTimeoutHandler(this.writeTimeout));
@@ -327,7 +328,7 @@ public abstract class TcpSession extends SimpleChannelInboundHandler<Packet> imp
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        if(this.disconnected || this.channel != null) {
+        if (this.disconnected || this.channel != null) {
             ctx.channel().close();
             return;
         }
@@ -339,11 +340,11 @@ public abstract class TcpSession extends SimpleChannelInboundHandler<Packet> imp
             public void run() {
                 try {
                     Packet packet;
-                    while((packet = packets.take()) != null) {
+                    while ((packet = packets.take()) != null) {
                         callEvent(new PacketReceivedEvent(TcpSession.this, packet));
                     }
-                } catch(InterruptedException e) {
-                } catch(Throwable t) {
+                } catch (InterruptedException e) {
+                } catch (Throwable t) {
                     exceptionCaught(null, t);
                 }
             }
@@ -356,7 +357,7 @@ public abstract class TcpSession extends SimpleChannelInboundHandler<Packet> imp
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        if(ctx.channel() == this.channel) {
+        if (ctx.channel() == this.channel) {
             this.disconnect("Connection closed.");
         }
     }
@@ -364,11 +365,11 @@ public abstract class TcpSession extends SimpleChannelInboundHandler<Packet> imp
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         String message = null;
-        if(cause instanceof ConnectTimeoutException || (cause instanceof ConnectException && cause.getMessage().contains("connection timed out"))) {
+        if (cause instanceof ConnectTimeoutException || (cause instanceof ConnectException && cause.getMessage().contains("connection timed out"))) {
             message = "Connection timed out.";
-        } else if(cause instanceof ReadTimeoutException) {
+        } else if (cause instanceof ReadTimeoutException) {
             message = "Read timed out.";
-        } else if(cause instanceof WriteTimeoutException) {
+        } else if (cause instanceof WriteTimeoutException) {
             message = "Write timed out.";
         } else {
             message = cause.toString();
@@ -379,7 +380,7 @@ public abstract class TcpSession extends SimpleChannelInboundHandler<Packet> imp
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Packet packet) throws Exception {
-        if(!packet.isPriority()) {
+        if (!packet.isPriority()) {
             this.packets.add(packet);
         }
     }
