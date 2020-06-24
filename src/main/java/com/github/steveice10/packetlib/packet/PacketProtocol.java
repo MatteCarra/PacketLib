@@ -15,10 +15,10 @@ import java.util.Map;
  * All implementations must have a no-params constructor for server protocol creation.
  */
 public abstract class PacketProtocol {
-    private final Map<Integer, Class<? extends Packet>> incoming = new HashMap<Integer, Class<? extends Packet>>();
-    private final Map<Class<? extends Packet>, Integer> outgoing = new HashMap<Class<? extends Packet>, Integer>();
-    protected boolean SKIP_NON_REGISTERED_OUTGOING_PACKETS = false;
-    protected boolean SKIP_NON_REGISTERED_INCOMING_PACKETS = true;
+    private final Map<Integer, Class<? extends Packet>> incoming = new HashMap<>();
+    private final Map<Class<? extends Packet>, Integer> outgoing = new HashMap<>();
+
+    private final Map<Integer, Class<? extends Packet>> outgoingClasses = new HashMap<>();
 
     /**
      * Gets the prefix used when locating SRV records for this protocol.
@@ -63,6 +63,7 @@ public abstract class PacketProtocol {
     public final void clearPackets() {
         this.incoming.clear();
         this.outgoing.clear();
+        this.outgoingClasses.clear();
     }
 
     /**
@@ -102,6 +103,7 @@ public abstract class PacketProtocol {
      */
     public final void registerOutgoing(int id, Class<? extends Packet> packet) {
         this.outgoing.put(packet, id);
+        this.outgoingClasses.put(id, packet);
     }
 
     /**
@@ -109,19 +111,13 @@ public abstract class PacketProtocol {
      *
      * @param id Id of the packet to create.
      * @return The created packet.
-     * @throws IllegalArgumentException If the packet ID is invalid.
+     * @throws IllegalArgumentException If the packet ID is not registered.
      * @throws IllegalStateException    If the packet does not have a no-params constructor or cannot be instantiated.
      */
     public final Packet createIncomingPacket(int id) {
-        Class<? extends Packet> packet;
-        if (id < 0 || !this.incoming.containsKey(id) || this.incoming.get(id) == null) {
-            if(SKIP_NON_REGISTERED_INCOMING_PACKETS) {
-                packet = SkipPacket.class;
-            } else {
-                throw new IllegalArgumentException("Invalid packet id: " + id);
-            }
-        } else {
-            packet = this.incoming.get(id);
+        Class<? extends Packet> packet = this.incoming.get(id);
+        if (packet == null) {
+            packet = SkipPacket.class;
         }
 
         try {
@@ -141,19 +137,46 @@ public abstract class PacketProtocol {
     /**
      * Gets the registered id of an outgoing packet class.
      *
-     * @param packet Class of the packet to get the id for.
+     * @param packetClass Class of the packet to get the id for.
      * @return The packet's registered id.
      * @throws IllegalArgumentException If the packet is not registered.
      */
-    public final int getOutgoingId(Class<? extends Packet> packet) {
-        Integer res;
-        if (!this.outgoing.containsKey(packet) || (res = this.outgoing.get(packet)) == null) {
-            if (SKIP_NON_REGISTERED_OUTGOING_PACKETS) {
-                throw new SilentException("Packet " + packet.getSimpleName() + " does not exists!");
-            }
-            throw new IllegalArgumentException("Unregistered outgoing packet class: " + packet.getName());
+    public final int getOutgoingId(Class<? extends Packet> packetClass) {
+        Integer packetId = this.outgoing.get(packetClass);
+        if(packetId == null) {
+            throw new SilentException("Packet " + packetClass.getSimpleName() + " does not exists!");
         }
 
-        return res;
+        return packetId;
+    }
+
+    /**
+     * Gets the registered id of an outgoing {@link Packet} instance.
+     *
+     * @param packet Instance of {@link Packet} to get the id for.
+     * @return The packet's registered id.
+     * @throws IllegalArgumentException If the packet is not registered.
+     */
+    public final int getOutgoingId(Packet packet) {
+        if(packet instanceof BufferedPacket) {
+            return getOutgoingId(((BufferedPacket)packet).getPacketClass());
+        }
+
+        return getOutgoingId(packet.getClass());
+    }
+
+    /**
+     * Gets the packet class for a packet id.
+     * @param id The packet id.
+     * @return The registered packet's class
+     * @throws IllegalArgumentException If the packet ID is not registered.
+     */
+    public final Class<? extends Packet> getOutgoingClass(int id) {
+        Class<? extends Packet> packet = this.outgoingClasses.get(id);
+        if(packet == null) {
+            throw new IllegalArgumentException("Invalid packet id: " + id);
+        }
+
+        return packet;
     }
 }

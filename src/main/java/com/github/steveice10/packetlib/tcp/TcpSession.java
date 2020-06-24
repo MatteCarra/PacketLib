@@ -15,6 +15,7 @@ import com.github.steveice10.packetlib.packet.PacketProtocol;
 import java.net.ConnectException;
 import java.net.SocketAddress;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -94,20 +95,25 @@ public abstract class TcpSession extends SimpleChannelInboundHandler<Packet> imp
 
     @Override
     public Map<String, Object> getFlags() {
-        return new HashMap<String, Object>(this.flags);
+        return Collections.unmodifiableMap(this.flags);
     }
 
     @Override
     public boolean hasFlag(String key) {
-        return this.getFlags().containsKey(key);
+        return this.flags.containsKey(key);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public <T> T getFlag(String key) {
-        Object value = this.getFlags().get(key);
-        if (value == null) {
-            return null;
+        return this.getFlag(key, null);
+    }
+
+    @Override
+    public <T> T getFlag(String key, T def) {
+        Object value = this.flags.get(key);
+        if(value == null) {
+            return def;
         }
 
         try {
@@ -124,7 +130,7 @@ public abstract class TcpSession extends SimpleChannelInboundHandler<Packet> imp
 
     @Override
     public List<SessionListener> getListeners() {
-        return new ArrayList<SessionListener>(this.listeners);
+        return Collections.unmodifiableList(this.listeners);
     }
 
     @Override
@@ -215,8 +221,7 @@ public abstract class TcpSession extends SimpleChannelInboundHandler<Packet> imp
 
         if (!sendingEvent.isCancelled()) {
             final Packet toSend = sendingEvent.getPacket();
-
-            ChannelFuture future = this.channel.writeAndFlush(toSend).addListener(new ChannelFutureListener() {
+            this.channel.writeAndFlush(toSend).addListener(new ChannelFutureListener() {
                 @Override
                 public void operationComplete(ChannelFuture future) throws Exception {
                     if (future.isSuccess()) {
@@ -226,34 +231,17 @@ public abstract class TcpSession extends SimpleChannelInboundHandler<Packet> imp
                     }
                 }
             });
-
-            if (toSend.isPriority()) {
-                try {
-                    future.await();
-                } catch (InterruptedException e) {
-                }
-            }
         }
     }
 
     @Override
     public void disconnect(String reason) {
-        this.disconnect(reason, false);
-    }
-
-    @Override
-    public void disconnect(String reason, boolean wait) {
-        this.disconnect(reason, null, wait);
+        this.disconnect(reason, null);
     }
 
     @Override
     public void disconnect(final String reason, final Throwable cause) {
-        this.disconnect(reason, cause, false);
-    }
-
-    @Override
-    public void disconnect(final String reason, final Throwable cause, boolean wait) {
-        if (this.disconnected) {
+        if(this.disconnected) {
             return;
         }
 
@@ -266,19 +254,12 @@ public abstract class TcpSession extends SimpleChannelInboundHandler<Packet> imp
 
         if (this.channel != null && this.channel.isOpen()) {
             this.callEvent(new DisconnectingEvent(this, reason, cause));
-            ChannelFuture future = this.channel.flush().close().addListener(new ChannelFutureListener() {
+            this.channel.flush().close().addListener(new ChannelFutureListener() {
                 @Override
                 public void operationComplete(ChannelFuture future) throws Exception {
                     callEvent(new DisconnectedEvent(TcpSession.this, reason != null ? reason : "Connection closed.", cause));
                 }
             });
-
-            if (wait) {
-                try {
-                    future.await();
-                } catch (InterruptedException e) {
-                }
-            }
         } else {
             this.callEvent(new DisconnectedEvent(this, reason != null ? reason : "Connection closed.", cause));
         }
@@ -379,8 +360,10 @@ public abstract class TcpSession extends SimpleChannelInboundHandler<Packet> imp
     }
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, Packet packet) throws Exception {
-        if (!packet.isPriority()) {
+    protected void channelRead0(ChannelHandlerContext ctx, Packet packet) {
+        if(packet.isPriority()) {
+            this.callEvent(new PacketReceivedEvent(this, packet));
+        } else {
             this.packets.add(packet);
         }
     }
