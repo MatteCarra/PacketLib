@@ -4,7 +4,6 @@ import com.github.steveice10.packetlib.Client;
 import com.github.steveice10.packetlib.Server;
 import com.github.steveice10.packetlib.Session;
 import com.github.steveice10.packetlib.crypt.PacketEncryption;
-import com.github.steveice10.packetlib.exception.SilentException;
 
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
@@ -144,7 +143,7 @@ public abstract class PacketProtocol {
     public final int getOutgoingId(Class<? extends Packet> packetClass) {
         Integer packetId = this.outgoing.get(packetClass);
         if(packetId == null) {
-            throw new SilentException("Packet " + packetClass.getSimpleName() + " does not exists!");
+            throw new IllegalArgumentException("Unregistered outgoing packet class: " + packetClass.getName());
         }
 
         return packetId;
