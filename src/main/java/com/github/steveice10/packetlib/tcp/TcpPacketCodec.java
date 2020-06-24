@@ -3,6 +3,7 @@ package com.github.steveice10.packetlib.tcp;
 import com.github.steveice10.packetlib.Session;
 import com.github.steveice10.packetlib.event.session.PacketErrorEvent;
 import com.github.steveice10.packetlib.event.session.PacketReceivedEvent;
+import com.github.steveice10.packetlib.exception.SilentException;
 import com.github.steveice10.packetlib.io.NetInput;
 import com.github.steveice10.packetlib.io.NetOutput;
 import com.github.steveice10.packetlib.packet.Packet;
@@ -32,6 +33,7 @@ public class TcpPacketCodec extends ByteToMessageCodec<Packet> {
 
             this.session.getPacketProtocol().getPacketHeader().writePacketId(out, this.session.getPacketProtocol().getOutgoingId(packet));
             packet.write(out);
+        } catch(SilentException ignored) {
         } catch(Throwable t) {
             // Reset writer index to make sure incomplete data is not written out.
             buf.writerIndex(initial);
@@ -86,7 +88,7 @@ public class TcpPacketCodec extends ByteToMessageCodec<Packet> {
             out.add(packet);
         } catch(Throwable t) {
             // Advance buffer to end to make sure remaining data in this packet is skipped.
-            buf.readerIndex(buf.readerIndex() + buf.readableBytes());
+            buf.readerIndex(buf.readerIndex() + buf.readableBytes()); //skipReadableBytes
 
             PacketErrorEvent e = new PacketErrorEvent(this.session, t);
             this.session.callEvent(e);
