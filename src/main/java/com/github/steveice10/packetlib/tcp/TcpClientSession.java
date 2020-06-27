@@ -27,9 +27,13 @@ import io.netty.handler.proxy.Socks4ProxyHandler;
 import io.netty.handler.proxy.Socks5ProxyHandler;
 import io.netty.resolver.dns.DnsNameResolver;
 import io.netty.resolver.dns.DnsNameResolverBuilder;
+import org.minidns.hla.ResolverApi;
+import org.minidns.hla.SrvResolverResult;
+import org.minidns.record.SRV;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.Set;
 
 public class TcpClientSession extends TcpSession {
     private Client client;
@@ -139,51 +143,23 @@ public class TcpClientSession extends TcpSession {
     }
 
     private SocketAddress resolveAddress() {
-        boolean debug = getFlag(BuiltinFlags.PRINT_DEBUG, false);
+        try {
+            String name = this.getPacketProtocol().getSRVRecordPrefix() + "._tcp." + this.getHost();
 
-        String name = this.getPacketProtocol().getSRVRecordPrefix() + "._tcp." + this.getHost();
-        if(debug) {
-            System.out.println("[PacketLib] Attempting SRV lookup for \"" + name + "\".");
-        }
-
-        AddressedEnvelope<DnsResponse, InetSocketAddress> envelope = null;
-        try(DnsNameResolver resolver = new DnsNameResolverBuilder(this.group.next())
-                .channelType(NioDatagramChannel.class)
-                .build()) {
-            envelope = resolver.query(new DefaultDnsQuestion(name, DnsRecordType.SRV)).get();
-            DnsResponse response = envelope.content();
-            if(response.count(DnsSection.ANSWER) > 0) {
-                DefaultDnsRawRecord record = response.recordAt(DnsSection.ANSWER, 0);
-                if(record.type() == DnsRecordType.SRV) {
-                    ByteBuf buf = record.content();
-                    buf.skipBytes(4); // Skip priority and weight.
-
-                    int port = buf.readUnsignedShort();
-                    String host = DefaultDnsRecordDecoder.decodeName(buf);
-                    if(host.endsWith(".")) {
-                        host = host.substring(0, host.length() - 1);
+            SrvResolverResult result = ResolverApi.INSTANCE.resolveSrv(name);
+            if (result.wasSuccessful()) {
+                Set<SRV> srvs = result.getAnswers();
+                if(srvs.size() > 0) {
+                    SRV srvRecord = srvs.iterator().next();
+                    if(srvRecord != null) {
+                        String host = srvRecord.target.ace.replaceFirst("\\.$", "");
+                        int port = srvRecord.port;
+                        return new InetSocketAddress(host, port);
                     }
-
-                    if(debug) {
-                        System.out.println("[PacketLib] Found SRV record containing \"" + host + ":" + port + "\".");
-                    }
-
-                    return new InetSocketAddress(host, port);
-                } else if(debug) {
-                    System.out.println("[PacketLib] Received non-SRV record in response.");
                 }
-            } else if(debug) {
-                System.out.println("[PacketLib] No SRV record found.");
             }
-        } catch(Exception e) {
-            if(debug) {
-                System.out.println("[PacketLib] Failed to resolve SRV record.");
-                e.printStackTrace();
-            }
-        } finally {
-            if(envelope != null) {
-                envelope.release();
-            }
+        } catch (Throwable t) {
+            t.printStackTrace();
         }
 
         return new InetSocketAddress(this.getHost(), this.getPort());

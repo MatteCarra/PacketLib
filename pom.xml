@@ -5,7 +5,7 @@
 
     <groupId>com.github.steveice10</groupId>
     <artifactId>packetlib</artifactId>
-    <version>1.7.1</version>
+    <version>1.7.4</version>
     <packaging>jar</packaging>
 
     <name>PacketLib</name>
@@ -50,6 +50,13 @@
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
             <version>4.1.45.Final</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.minidns</groupId>
+            <artifactId>minidns-hla</artifactId>
+            <version>0.3.4</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>
