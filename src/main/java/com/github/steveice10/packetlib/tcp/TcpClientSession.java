@@ -1,12 +1,9 @@
 package com.github.steveice10.packetlib.tcp;
 
-import com.github.steveice10.packetlib.BuiltinFlags;
 import com.github.steveice10.packetlib.Client;
 import com.github.steveice10.packetlib.ProxyInfo;
 import com.github.steveice10.packetlib.packet.PacketProtocol;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.AddressedEnvelope;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -14,25 +11,14 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.dns.DefaultDnsQuestion;
-import io.netty.handler.codec.dns.DefaultDnsRawRecord;
-import io.netty.handler.codec.dns.DefaultDnsRecordDecoder;
-import io.netty.handler.codec.dns.DnsRecordType;
-import io.netty.handler.codec.dns.DnsResponse;
-import io.netty.handler.codec.dns.DnsSection;
 import io.netty.handler.proxy.HttpProxyHandler;
 import io.netty.handler.proxy.Socks4ProxyHandler;
 import io.netty.handler.proxy.Socks5ProxyHandler;
-import io.netty.resolver.dns.DnsNameResolver;
-import io.netty.resolver.dns.DnsNameResolverBuilder;
 import org.minidns.hla.ResolverApi;
 import org.minidns.hla.SrvResolverResult;
 import org.minidns.record.SRV;
 
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.util.Set;
 
 public class TcpClientSession extends TcpSession {
@@ -115,7 +101,8 @@ public class TcpClientSession extends TcpSession {
                 @Override
                 public void run() {
                     try {
-                        bootstrap.remoteAddress(resolveAddress());
+                        resolveAddress();
+                        bootstrap.remoteAddress(getHost(), getPort());
 
                         ChannelFuture future = bootstrap.connect().sync();
                         if(future.isSuccess()) {
@@ -142,7 +129,7 @@ public class TcpClientSession extends TcpSession {
         }
     }
 
-    private SocketAddress resolveAddress() {
+    private void resolveAddress() {
         try {
             String name = this.getPacketProtocol().getSRVRecordPrefix() + "._tcp." + this.getHost();
 
@@ -154,15 +141,15 @@ public class TcpClientSession extends TcpSession {
                     if(srvRecord != null) {
                         String host = srvRecord.target.ace.replaceFirst("\\.$", "");
                         int port = srvRecord.port;
-                        return new InetSocketAddress(host, port);
+
+                        this.host = host;
+                        this.port = port;
                     }
                 }
             }
         } catch (Throwable t) {
             t.printStackTrace();
         }
-
-        return new InetSocketAddress(this.getHost(), this.getPort());
     }
 
     @Override

@@ -35,8 +35,8 @@ import io.netty.handler.timeout.WriteTimeoutException;
 import io.netty.handler.timeout.WriteTimeoutHandler;
 
 public abstract class TcpSession extends SimpleChannelInboundHandler<Packet> implements Session {
-    private String host;
-    private int port;
+    protected String host;
+    protected int port;
     private PacketProtocol protocol;
 
     private int compressionThreshold = -1;
